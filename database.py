@@ -39,7 +39,6 @@ def add_user(username: str, lat: float, lon: float, user_id):
     Add new user to database
     '''
     cursor = conn.cursor()
-    print(type(lat))
     cursor.execute('INSERT INTO USER(Username, Lat, Lon, Rating, UserId) VALUES (?, ?, ?, ?, ?)', (username, lat, lon, 0, user_id))
     conn.commit()
 
