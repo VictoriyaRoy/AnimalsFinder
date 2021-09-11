@@ -24,7 +24,6 @@ def handle_start(message):
     """
     bot.send_message(message.chat.id, "Вітаю! Я бот для пошуку тварин у Львові.\n\
 Разом ми зможемо допомогати господарам знаходити їхніх втрачених тваринок.")
-    # bot.send_location(chat_id, lat, lon)
     username = message.from_user.username
     if database.is_new_user(username):
         bot.send_message(message.chat.id, "Уведіть адресу свого будинку, будь ласка.")
