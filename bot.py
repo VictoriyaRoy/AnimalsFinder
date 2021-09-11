@@ -2,8 +2,9 @@ import telebot
 import telebot_calendar
 import datetime
 from telebot_calendar import Calendar, CallbackData
-# import animals
+
 from conf import tok
+import database, location
 
 bot = telebot.TeleBot(tok)
 
@@ -21,19 +22,21 @@ def handle_start(message):
     bot.send_message(message.chat.id, "Вітаю! Я бот для пошуку тварин у Львові.\n\
 Разом ми зможемо допомогати господарам знаходити їхніх втрачених тваринок.")
     # bot.send_location(chat_id, lat, lon)
-    user = message.from_user.username
-    '''
-    if user not in animals:
-        bot.send_message(message.chat.id, "Уведіть свою адресу, будь ласка.")
+    username = message.from_user.username
+    if database.is_new_user(username):
+        bot.reply_to(message, "Уведіть адресу свого будинку, будь ласка.")
         bot.register_next_step_handler(message, address)
-    '''
 
 
 def address(message):
     addr = message.text
-    '''
-    add addr to db
-    '''
+    coord = location.find_house_coordinates(addr)
+    if coord:
+        database.add_user(message.from_user.username, coord[0], coord[1])
+        bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
+    else:
+        bot.send_message(message.chat.id, "Вибачте, введенна адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
+
 
 
 @bot.message_handler(commands=['lost'])
