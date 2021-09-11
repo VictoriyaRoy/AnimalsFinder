@@ -4,9 +4,10 @@ import datetime
 from telebot_calendar import Calendar, CallbackData
 
 from conf import tok
-import database, location
-from database import find_users_in_radius
+import database
+import location
 
+RADIUS = 3
 
 bot = telebot.TeleBot(tok)
 
@@ -193,9 +194,10 @@ def features(message):
     an_feat = message.text
     with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
         lost_an_f.write(an_feat + '\n')
+    place, msg, photo = database.add_lost_advert(message.from_user.username, 'lost.txt', "image.jpg")
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-    send_lost_adv(message.from_user.username)
+    send_adv_in_radius(place, msg, photo)
 
 
 @bot.message_handler(commands=['found'])
@@ -244,17 +246,23 @@ def found_an_sex_callback(query):
     if data in ('Ч', 'Ж', 'Н'):
         with open('found.txt', 'a', encoding='utf-8') as found_an_f:
             found_an_f.write(data + '\n')
-    bot.send_message(query.from_user.id, "Перевірте, чи немає знайденої тварини \
+
+    with open('found.txt', 'r', encoding='utf-8') as found_an_f:
+        an_type = found_an_f.readline().strip()
+        an_sex = found_an_f.readline().strip()
+    lost = database.find_among_lost(an_type, an_sex)
+
+    if lost:
+        bot.send_message(query.from_user.id, "Перевірте, чи немає знайденої тварини \
 серед останніх втрачених улюбленців. Якщо якесь оголошення містить схожу тварину, \
 зв'яжіться з власником.")
-    next_m = "Ви досі маєте потребу у створенні оголошення \
+        for announcement, photo in lost:
+            if photo:
+                bot.send_photo(query.from_user.id, photo, caption=announcement)
+            else:
+                bot.send_message(query.from_user.id, announcement)        
+        next_m = "Ви досі маєте потребу у створенні оголошення \
 чи вже знайшли власника тварини?"
-    for announcement, photo in lost:
-        if photo:
-            bot.send_photo(query.from_user.id, photo, caption=announcement)
-        else:
-            bot.send_message(query.from_user.id, announcement)
-    if lost:
         keyboard = telebot.types.InlineKeyboardMarkup()
         keyboard.row(telebot.types.InlineKeyboardButton('Досі потрібно оголошення', callback_data='found_announc: yes'))
         keyboard.row(telebot.types.InlineKeyboardButton('Дякую, тваринка знайшлася!', callback_data='found_announc: no'))
@@ -296,14 +304,14 @@ def found_features(message):
     an_features = message.text
     with open('found.txt', 'a', encoding='utf-8') as found_an_f:
         found_an_f.write(an_features + '\n')
+    place, msg, photo = database.add_lost_advert(message.from_user.username, 'lost.txt', "image.jpg")
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-#     send_lost_adv(message.from_user.username)
+    send_adv_in_radius(place, msg, photo)
 
 
-def send_lost_adv(username: str):
-    place, msg, photo = database.add_lost_advert(username, 'lost.txt', "image.jpg")
-    contacts = find_users_in_radius(place, 3)
+def send_adv_in_radius(place: str, msg: str, photo):
+    contacts = database.find_users_in_radius(place, RADIUS)
     for contact in contacts:
         bot.send_photo(contact, photo, caption=msg)
 

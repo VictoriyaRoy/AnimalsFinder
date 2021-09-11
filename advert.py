@@ -18,7 +18,7 @@ class FoundAdvert(Advert):
     
     def get_message(self):
         message = super().get_message()
-        if (self.sex):
+        if (self.sex != 'Н'):
             message += f"Стать: {self.sex}\n"
         message += f'''Особливості: {self.features}
 Дата: {self.date}
