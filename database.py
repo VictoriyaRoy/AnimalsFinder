@@ -13,8 +13,7 @@ def read(table_name: str):
     Print dataFrame
     '''
     df = pd.read_sql(f'SELECT * FROM {table_name}', conn)
-    lst = df["Message"].to_list()
-    print(lst)
+    print(df)
 
 
 def clear_table(table_name: str):
@@ -35,13 +34,13 @@ def is_new_user(username: str) -> bool:
     return df.empty
 
 
-def add_user(username: str, lat: float, lon: float):
+def add_user(username: str, lat: float, lon: float, user_id):
     '''
     Add new user to database
     '''
     cursor = conn.cursor()
     print(type(lat))
-    cursor.execute('INSERT INTO USER(Username, Lat, Lon, Rating) VALUES (?, ?, ?, ?)', (username, lat, lon, 0))
+    cursor.execute('INSERT INTO USER(Username, Lat, Lon, Rating, UserId) VALUES (?, ?, ?, ?, ?)', (username, lat, lon, 0, user_id))
     conn.commit()
 
 
@@ -60,7 +59,7 @@ def add_lost_advert(username, text_file, photo_path):
         ''',
         (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
     conn.commit()
-    return (adv.get_message(), photo)
+    return (adv.place, adv.get_message(), photo)
 
 
 def add_found_advert(username, text_file, photo_path):
@@ -109,13 +108,16 @@ def find_among_lost(type: str, sex: str) -> set:
     return advert_set
 
 
-def find_users_in_radius(lat: float, lon: float, radius: float) -> list:
+def find_users_in_radius(place: str, radius: float) -> list:
     '''
     Return list of users in radius from coordinates
     '''
-    df = pd.read_sql(f'SELECT * FROM USER', conn)
-    df['Distance'] = df.apply(lambda x: location.find_distance(x['Lat'], x['Lon'], lat, lon), axis = 1)
-    return df[df['Distance'] <= radius]['Username'].to_list()
+    coord = location.find_house_coordinates(place)
+    if coord:
+        df = pd.read_sql(f'SELECT * FROM USER', conn)
+        df['Distance'] = df.apply(lambda x: location.find_distance(x['Lat'], x['Lon'], coord[0], coord[1]), axis = 1)
+        return df[df['Distance'] <= radius]['UserId'].to_list()
+    return None
 
 
 def lost_animals_of_user(username: str) -> dict:

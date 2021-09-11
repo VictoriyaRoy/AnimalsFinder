@@ -5,6 +5,7 @@ from telebot_calendar import Calendar, CallbackData
 
 from conf import tok
 import database, location
+from database import find_users_in_radius
 
 
 bot = telebot.TeleBot(tok)
@@ -33,11 +34,10 @@ def address(message):
     addr = message.text
     coord = location.find_house_coordinates(addr)
     if coord:
-        database.add_user(message.from_user.username, coord[0], coord[1])
+        database.add_user(message.from_user.username, coord[0], coord[1], message.chat.id)
         bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
     else:
         bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
-
 
 
 @bot.message_handler(commands=['lost'])
@@ -46,6 +46,8 @@ def handle_lost(message):
     Handles the lost animal.
     Helps the owner find their animal.
     """
+    with open('user.txt', 'w', encoding='utf-8') as user_f:
+        user_f.write(str(message.chat.id))
     keyboard = telebot.types.InlineKeyboardMarkup()
     animal_types = ['Кіт', 'Собака', 'Інше']
     for anim_type in animal_types:
@@ -162,10 +164,6 @@ def announc_callback(query):
         bot.register_next_step_handler_by_chat_id(query.from_user.id, anim_name)
     else:
         bot.send_message(query.from_user.id, "Вітаємо з поверненням улюбленця!")
-    '''
-    особливості
-    фото
-    '''
 
 
 def anim_name(message):
@@ -200,13 +198,16 @@ def features(message):
         lost_an_f.write(an_feat + '\n')
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-    send_lost_adv(message.from_user.username, message.chat.id)
+    send_lost_adv(message.from_user.username)
 
 
 def send_lost_adv(username: str):
-    msg, photo = database.add_lost_advert(username, 'lost.txt', "image.jpg")
-
-    
+    place, msg, photo = database.add_lost_advert(username, 'lost.txt', "image.jpg")
+    contacts = find_users_in_radius(place, 3)
+    # with open('user.txt', 'w', encoding='utf-8') as user_f:
+    #     user_f.write(message.chat.id)
+    for contact in contacts:
+        bot.send_message(contact, msg)
 
 
 @bot.message_handler(commands=['message'])
