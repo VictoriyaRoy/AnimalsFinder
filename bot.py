@@ -253,16 +253,15 @@ def found_an_sex_callback(query):
         an_sex = found_an_f.readline().strip()
     lost = database.find_among_lost(an_type, an_sex)
 
-    for announcement, photo in lost:
-        if photo:
-            bot.send_photo(query.from_user.id, photo, caption=announcement)
-        else:
-            bot.send_message(query.from_user.id, announcement)
-
     if lost:
         bot.send_message(query.from_user.id, "Перевірте, чи немає знайденої тварини \
 серед останніх втрачених улюбленців. Якщо якесь оголошення містить схожу тварину, \
 зв'яжіться з власником.")
+        for announcement, photo in lost:
+            if photo:
+                bot.send_photo(query.from_user.id, photo, caption=announcement)
+            else:
+                bot.send_message(query.from_user.id, announcement)        
         next_m = "Ви досі маєте потребу у створенні оголошення \
 чи вже знайшли власника тварини?"
         keyboard = telebot.types.InlineKeyboardMarkup()
