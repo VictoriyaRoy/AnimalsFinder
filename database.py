@@ -100,12 +100,20 @@ def find_users_in_radius(lat: float, lon: float, radius: float) -> list:
     return df[df['Distance'] <= radius]['Username'].to_list()
 
 
-def lost_animals_of_user(username: str) -> list:
+def lost_animals_of_user(username: str) -> dict:
     '''
     Return list of animals of user
     '''
-    query = f'SELECT Type, Name FROM LOST WHERE Username = "{username}"'
+    query = f'SELECT Name FROM LOST WHERE Username = "{username}"'
     df = pd.read_sql(query, conn)
-    df['FullName'] = df.apply(lambda x: x['Type'] + ' ' + x['Name'], axis = 1)
-    print(df['FullName'].to_list())
+    print(df['Name'].to_list())
+
+
+def delete_lost_advert(username: str, animal_name: str):
+    '''
+    Delete lost advert when animal was found
+    '''
+    cursor = conn.cursor()
+    cursor.execute(f'DELETE FROM Lost WHERE Username = "{username}" AND Name = "{animal_name}"')
+    conn.commit()
 
