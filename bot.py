@@ -25,8 +25,8 @@ def handle_start(message):
     # bot.send_location(chat_id, lat, lon)
     username = message.from_user.username
     if database.is_new_user(username):
-        bot.reply_to(message, "Уведіть адресу свого будинку, будь ласка.")
-        bot.register_next_step_handler(message, address)
+        bot.send_message(message.chat.id, "Уведіть адресу свого будинку, будь ласка.")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, address)
 
 
 def address(message):
@@ -36,7 +36,7 @@ def address(message):
         database.add_user(message.from_user.username, coord[0], coord[1])
         bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
     else:
-        bot.send_message(message.chat.id, "Вибачте, введенна адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
+        bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
 
 
 
@@ -125,23 +125,79 @@ def callback_inline(call: telebot.types.CallbackQuery):
                 text=f"Ви обрали {date.strftime('%d.%m.%Y')}",
                 reply_markup=telebot.types.ReplyKeyboardRemove())
             with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
-                lost_an_f.write(date.strftime('%d.%m.%Y'))
-            
+                lost_an_f.write(date.strftime('%d.%m.%Y') + '\n')
             with open('lost.txt', 'r', encoding='utf-8') as lost_an_f:
                 an_type = lost_an_f.readline().strip()
                 an_sex = lost_an_f.readline().strip()
                 an_date = lost_an_f.readline().strip()
-
             found = database.find_among_found(an_type, an_sex, an_date)
             if found:
                 bot.send_message(call.from_user.id, "Перевірте, чи немає вашого улюбленця \
 серед останніх знайдених тварин. Якщо якесь оголошення може містити вашу тварину, \
 зв'яжіться з людиною, яка його розмістила.")
+                next_m = "Ви досі маєте потребу у створенні оголошення для пошуку тварини \
+чи вже знайшли свого улюбленця?"
             for announcement, photo in found:
                 if photo:
                     bot.send_photo(call.from_user.id, photo, caption=announcement)
                 else:
                     bot.send_message(call.from_user.id, announcement)
+            if found:
+                keyboard = telebot.types.InlineKeyboardMarkup()
+                keyboard.row(telebot.types.InlineKeyboardButton('Потрібно оголошення :(', callback_data='announc: yes'))
+                keyboard.row(telebot.types.InlineKeyboardButton('Дякую, тваринка знайшлася!', callback_data='announc: no'))
+                bot.send_message(call.from_user.id, next_m, reply_markup=keyboard)
+            else:
+                bot.send_message(call.from_user.id, "Як звати вашого улюбленця?")
+                bot.register_next_step_handler_by_chat_id(call.from_user.id, anim_name)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('announc'))
+def announc_callback(query):
+    data = query.data[9:]
+    if data == 'yes':
+        bot.send_message(query.from_user.id, "Як звати вашого улюбленця?")
+        bot.register_next_step_handler_by_chat_id(query.from_user.id, anim_name)
+    else:
+        bot.send_message(query.from_user.id, "Вітаємо з поверненням улюбленця!")
+    '''
+    особливості
+    фото
+    '''
+
+
+def anim_name(message):
+    lost_name = message.text
+    with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+        lost_an_f.write(lost_name + '\n')
+    bot.send_message(message.chat.id, "Де загубилася ваша тваринка?")
+    bot.register_next_step_handler_by_chat_id(message.chat.id, lost_address)
+
+
+def lost_address(message):
+    addr = message.text
+    with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+        lost_an_f.write(addr + '\n')
+    bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію вашої тварини.")
+    bot.register_next_step_handler_by_chat_id(message.chat.id, anim_photo)
+
+
+def anim_photo(message):
+    fileID = message.photo[-1].file_id
+    file_info = bot.get_file(fileID)
+    downloaded_file = bot.download_file(file_info.file_path)
+    with open("image.jpg", 'wb') as new_file:
+        new_file.write(downloaded_file)
+    bot.send_message(message.chat.id, "Які особливі прикмети є у вашого улюбленця?")
+    bot.register_next_step_handler_by_chat_id(message.chat.id, features)
+
+
+def features(message):
+    an_feat = message.text
+    with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+        lost_an_f.write(an_feat + '\n')
+    bot.send_message(message.chat.id, "Дякуємо за звернення. \
+        Слідкуйте за своїми повідомленнями в Телеграмі.")
 
 
 @bot.message_handler(commands=['message'])
