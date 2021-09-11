@@ -23,7 +23,6 @@ def handle_start(message):
     """
     bot.send_message(message.chat.id, "Вітаю! Я бот для пошуку тварин у Львові.\n\
 Разом ми зможемо допомогати господарам знаходити їхніх втрачених тваринок.")
-    # bot.send_location(chat_id, lat, lon)
     username = message.from_user.username
     if database.is_new_user(username):
         bot.send_message(message.chat.id, "Уведіть адресу свого будинку, будь ласка.")
@@ -250,7 +249,6 @@ def found_an_sex_callback(query):
 зв'яжіться з власником.")
     next_m = "Ви досі маєте потребу у створенні оголошення \
 чи вже знайшли власника тварини?"
-    lost = get_lost_animals("IMG_2195.JPG")
     for announcement, photo in lost:
         if photo:
             bot.send_photo(query.from_user.id, photo, caption=announcement)
