@@ -3,7 +3,7 @@ import pandas as pd
 from pandas.core.frame import DataFrame
 import datetime
 import location
-from advert import FoundAdvert
+from advert import FoundAdvert, LostAdvert
 
 conn = sqlite3.connect('animals.db', check_same_thread=False)
 
@@ -44,32 +44,36 @@ def add_user(username: str, lat: float, lon: float):
     conn.commit()
 
 
-def add_lost_advert(username, type, sex, name, features, lost_date, place, photo):
+def add_lost_advert(username, text_file, photo):
     '''
     Add new advertisement about lost animal to database
     '''
+    adv = LostAdvert.create_from_file(username, text_file, photo)
     cursor = conn.cursor()
     cursor.execute(
         '''
-        INSERT INTO LOST(Username, Type, Sex, Name, Features, Date, Place, Photo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO LOST(Username, Type, Sex, Date, Advert)
+        VALUES (?, ?, ?, ?, ?)
         ''',
-        (username, type, sex, name, features, lost_date, place, photo))
+        (username, adv.type, adv.sex, adv.lost_date, adv))
     conn.commit()
+    return adv.get_info_tuple()
 
 
-def add_found_advert(username, type, sex, features, place, photo):
+def add_found_advert(username, text_file, photo):
     '''
     Add new advertisement about found animal to database
     '''
+    adv = FoundAdvert.create_from_file(username, text_file, photo)
     cursor = conn.cursor()
     cursor.execute(
         '''
-        INSERT INTO FOUND(Username, Type, Sex, Features, Date, Place, Photo)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO FOUND(Username, Type, Sex, Date, Advert)
+        VALUES (?, ?, ?, ?, ?)
         ''',
-        (username, type, sex, features, datetime.date.today(), place, photo))
+        (username, adv.type, adv.sex, adv.date, adv))
     conn.commit()
+    return adv.get_info_tuple()
 
 
 def find_among_found(type: str, sex: str, lost_date: datetime.date) -> set:
@@ -78,10 +82,9 @@ def find_among_found(type: str, sex: str, lost_date: datetime.date) -> set:
     '''
     query = f'SELECT * FROM FOUND WHERE Type = "{type}" AND (Sex = "{sex}" OR Sex IS NULL) AND Date >= "{lost_date}"'
     df = pd.read_sql(query, conn)
-    df['Advert'] = df.apply(lambda x: FoundAdvert(x['Username'], x['Type'], x['Sex'], x['Features'], x['Date'], x['Place'], x['Photo']), axis = 1)
     advert_set = set()
     for adv in df['Advert']:
-        advert_set.add((adv.get_message(), None))
+        advert_set.add(adv.get_info_tuple())
     return advert_set
 
 
@@ -93,7 +96,10 @@ def find_among_lost(type: str, sex: str) -> DataFrame:
     if sex:
         query +=  f' AND Sex = "{sex}"'
     df = pd.read_sql(query, conn)
-    return df
+    advert_set = set()
+    for adv in df['Advert']:
+        advert_set.add(adv.get_info_tuple())
+    return advert_set
 
 
 def find_users_in_radius(lat: float, lon: float, radius: float) -> list:
@@ -121,6 +127,3 @@ def delete_lost_advert(username: str, animal_name: str):
     cursor = conn.cursor()
     cursor.execute(f'DELETE FROM Lost WHERE Username = "{username}" AND Name = "{animal_name}"')
     conn.commit()
-
-# add_found_advert("victoriya_roi", "Кіт", "Ч", "Котик Садового", "Площа Ринок", None)
-# read("FOUND")
