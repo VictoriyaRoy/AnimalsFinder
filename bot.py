@@ -318,7 +318,7 @@ def send_adv_in_radius(place: str, msg: str, photo):
 
 @bot.message_handler(commands=['mark_found'])
 def handle_mark_found(message):
-    names = {'Catt', 'Dogg'}
+    names = database.lost_animals_of_user(message.from_user.username)
     if not names:
         bot.send_message(message.chat.id, 'У вас немає загублених тварин, щоб відмічати їх знайденими.\n\
 Можливо, ви хотіли викликати команду /found?')
@@ -336,8 +336,8 @@ def found_anim_callback(query):
     if data == 'cancel':
         bot.send_message(query.from_user.id, "Операцію скасовано.")
     else:
+        database.delete_lost_advert(query.from_user.username, data)
         bot.send_message(query.from_user.id, f"Вітаємо зі знаходженням {data}.")
-        # add your func
 
 
 @bot.message_handler(commands=['message'])

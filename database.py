@@ -53,10 +53,10 @@ def add_lost_advert(username, text_file, photo_path):
     cursor = conn.cursor()
     cursor.execute(
         '''
-        INSERT INTO LOST(Username, Type, Sex, Date, Message, Photo)
+        INSERT INTO LOST(Username, Type, Sex, Name, Message, Photo)
         VALUES (?, ?, ?, ?, ?, ?)
         ''',
-        (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
+        (username, adv.type, adv.sex, adv.name, adv.get_message(), photo))
     conn.commit()
     return (adv.place, adv.get_message(), photo)
 
