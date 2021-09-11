@@ -204,10 +204,8 @@ def features(message):
 def send_lost_adv(username: str):
     place, msg, photo = database.add_lost_advert(username, 'lost.txt', "image.jpg")
     contacts = find_users_in_radius(place, 3)
-    # with open('user.txt', 'w', encoding='utf-8') as user_f:
-    #     user_f.write(message.chat.id)
     for contact in contacts:
-        bot.send_message(contact, msg)
+        bot.send_photo(contact, photo, caption=msg)
 
 
 @bot.message_handler(commands=['message'])
