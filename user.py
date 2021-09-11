@@ -1,10 +1,10 @@
 import sqlite3
 import pandas as pd
 
-conn = sqlite3.connect('animals.db')
+conn = sqlite3.connect('animals.db', check_same_thread=False)
 
 def create():
-    df_users = pd.DataFrame(columns=['Nickname', "Lat", "Lon"])
+    df_users = pd.DataFrame(columns=['Username', "Lat", "Lon"])
     df_users.to_sql('USER', conn)
 
 def read():
@@ -19,22 +19,22 @@ def clear_table():
     cursor.execute("Delete from USER")
     conn.commit()
 
-def is_new_user(nickname: str) -> bool:
-    df = pd.read_sql(f'SELECT Nickname FROM USER WHERE Nickname = "{nickname}"', conn)
+def is_new_user(username: str) -> bool:
+    df = pd.read_sql(f'SELECT Username FROM USER WHERE Username = "{username}"', conn)
     return df.empty
 
-def add_user(nickname, lat, lon):
+def add_user(username, lat, lon):
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO USER(Nickname, Lat, Lon) VALUES (?, ?, ?)', (nickname, lat, lon))
+    cursor.execute('INSERT INTO USER(Username, Lat, Lon) VALUES (?, ?, ?)', (username, lat, lon))
     conn.commit()
 
 
 # create()
 # clear_table()
 
-if is_new_user("test_user"):
-    add_user("test_user", 0, 0)
-    print('Success')
-    read()
-else:
-    print("Error")
+# if is_new_user("test_user"):
+#     add_user("test_user", 0, 0)
+#     print('Success')
+#     read()
+# else:
+#     print("Error")

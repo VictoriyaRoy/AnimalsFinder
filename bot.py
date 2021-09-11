@@ -1,5 +1,5 @@
 import telebot
-# import animals
+import user
 from conf import tok
 
 bot = telebot.TeleBot(tok)
@@ -13,20 +13,17 @@ def handle_start(message):
     bot.send_message(message.chat.id, "Вітаю! Я бот для пошуку тварин у Львові.\n\
 Разом ми зможемо допомогати господарам знаходити їхніх втрачених тваринок.")
     # bot.send_location(chat_id, lat, lon)
-    user = message.from_user.username
-    '''
-    if user not in animals:
-        bot.send_message(message.chat.id, "Уведіть свою адресу, будь ласка.")
-    '''
-    bot.reply_to(message, "Уведіть свою адресу, будь ласка.")
-    bot.register_next_step_handler(message, address)
+    username = message.from_user.username
+    if user.is_new_user(username):
+        bot.reply_to(message, "Уведіть адресу свого будинку, будь ласка.")
+        bot.register_next_step_handler(message, address)
 
 
 def address(message):
     addr = message.text
-    '''
-    add addr to db
-    '''
+    # There will be convertion address to coordinates
+    user.add_user(message.from_user.username, 0, 0)
+    bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
 
 def handle_reply(message):
     bot.reply_to(message, message + ' Thanks')
