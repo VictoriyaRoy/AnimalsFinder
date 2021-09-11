@@ -1,5 +1,7 @@
 import sqlite3
 import pandas as pd
+from pandas.core.frame import DataFrame
+import datetime
 
 conn = sqlite3.connect('animals.db', check_same_thread=False)
 
@@ -39,7 +41,7 @@ def add_user(username: str, lat: float, lon: float):
     conn.commit()
 
 
-def add_lost_advert(username, type, sex, name, features, date, place, photo):
+def add_lost_advert(username, type, sex, name, features, lost_date, place, photo):
     '''
     Add new advertisement about lost animal to database
     '''
@@ -49,11 +51,11 @@ def add_lost_advert(username, type, sex, name, features, date, place, photo):
         INSERT INTO LOST(Username, Type, Sex, Name, Features, Date, Place, Photo)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''',
-        (username, type, sex, name, features, date, place, photo))
+        (username, type, sex, name, features, lost_date, place, photo))
     conn.commit()
 
 
-def add_found_advert(username, type, sex, features, date, place, photo):
+def add_found_advert(username, type, sex, features, place, photo):
     '''
     Add new advertisement about found animal to database
     '''
@@ -63,9 +65,25 @@ def add_found_advert(username, type, sex, features, date, place, photo):
         INSERT INTO FOUND(Username, Type, Sex, Features, Date, Place, Photo)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ''',
-        (username, type, sex, features, date, place, photo))
+        (username, type, sex, features, datetime.date.today(), place, photo))
     conn.commit()
 
-# clear_table("USER")
-# add_found_advert("test", "cat", "F", "Blue eyes", "24/04/21", "Lviv", "photo.jpg")
-read("USER")
+
+def find_among_found(type: str, sex: str, lost_date: datetime.date) -> DataFrame:
+    '''
+    Return DataFrame of adverts where type, sex and date are fits the request
+    '''
+    query = f'SELECT * FROM FOUND WHERE Type = "{type}" AND (Sex = "{sex}" OR Sex IS NULL) AND Date >= "{lost_date}"'
+    df = pd.read_sql(query, conn)
+    return df
+
+
+def find_among_lost(type: str, sex: str) -> DataFrame:
+    '''
+    Return DataFrame of adverts where type and sex are fits the request
+    '''
+    query = f'SELECT * FROM LOST WHERE Type = "{type}"'
+    if sex:
+        query +=  f' AND Sex = "{sex}"'
+    df = pd.read_sql(query, conn)
+    return df
