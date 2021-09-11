@@ -6,7 +6,6 @@ from telebot_calendar import Calendar, CallbackData
 from conf import tok
 import database, location
 from database import find_users_in_radius
-from found_animals import get_found_animals
 
 
 bot = telebot.TeleBot(tok)
@@ -27,10 +26,6 @@ def handle_start(message):
     # bot.send_location(chat_id, lat, lon)
     username = message.from_user.username
     if database.is_new_user(username):
-        user_id = message.chat.id
-        '''
-        Add user_id to db
-        '''
         bot.send_message(message.chat.id, "Уведіть адресу свого будинку, будь ласка.")
         bot.register_next_step_handler_by_chat_id(message.chat.id, address)
 
@@ -39,7 +34,7 @@ def address(message):
     addr = message.text
     coord = location.find_house_coordinates(addr)
     if coord:
-        database.add_user(message.from_user.username, coord[0], coord[1])
+        database.add_user(message.from_user.username, coord[0], coord[1], message.chat.id)
         bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
     else:
         bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
@@ -133,7 +128,13 @@ def callback_inline(call: telebot.types.CallbackQuery):
                 reply_markup=telebot.types.ReplyKeyboardRemove())
             with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
                 lost_an_f.write(date.strftime('%d.%m.%Y') + '\n')
-            found = get_found_animals('IMG_2195.JPG')
+
+            with open('lost.txt', 'r', encoding='utf-8') as lost_an_f:
+                an_type = lost_an_f.readline().strip()
+                an_sex = lost_an_f.readline().strip()
+                an_date = lost_an_f.readline().strip()
+            found = database.find_among_found(an_type, an_sex, an_date)
+
             if found:
                 bot.send_message(call.from_user.id, "Перевірте, чи немає вашого улюбленця \
 серед останніх знайдених тварин. Якщо якесь оголошення може містити вашу тварину, \
@@ -197,16 +198,14 @@ def features(message):
         lost_an_f.write(an_feat + '\n')
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-    '''
-    contacts = find_users_in_radius(lat, lon, radius)
+    send_lost_adv(message.from_user.username)
+
+
+def send_lost_adv(username: str):
+    place, msg, photo = database.add_lost_advert(username, 'lost.txt', "image.jpg")
+    contacts = find_users_in_radius(place, 3)
     for contact in contacts:
-        bot.send_message(contact, announcement)
-    '''
-    # with open('user.txt', 'w', encoding='utf-8') as user_f:
-    #     user_f.write(message.chat.id)
-    contacts = [641607233]
-    for contact in contacts:
-        bot.send_message(contact, 'wooo, new message')
+        bot.send_photo(contact, photo, caption=msg)
 
 
 @bot.message_handler(commands=['message'])
