@@ -76,7 +76,7 @@ def add_found_advert(username, text_file, photo_path):
         ''',
         (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
     conn.commit()
-    return (adv.get_message(), photo)
+    return (adv.place, adv.get_message(), photo)
 
 
 def find_among_found(type: str, sex: str, lost_date: datetime.date) -> set:
@@ -135,5 +135,3 @@ def delete_lost_advert(username: str, animal_name: str):
     cursor = conn.cursor()
     cursor.execute(f'DELETE FROM Lost WHERE Username = "{username}" AND Name = "{animal_name}"')
     conn.commit()
-
-read('LOST')

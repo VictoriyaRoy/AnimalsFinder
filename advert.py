@@ -6,10 +6,6 @@ def read_file_line(file):
 class Advert:
     def __init__(self, username):
         self.username = username
-    
-    def get_message(self):
-        message = f"Тварина: {self.type}\n"
-        return message
 
 
 class FoundAdvert(Advert):
@@ -17,7 +13,8 @@ class FoundAdvert(Advert):
         super().__init__(username)
     
     def get_message(self):
-        message = super().get_message()
+        message = "ЗНАЙШЛАСЬ ТВАРИНА!\n"
+        message += f"Тип: {self.type}\n"
         if (self.sex != 'Н'):
             message += f"Стать: {self.sex}\n"
         message += f'''Особливості: {self.features}
@@ -46,8 +43,9 @@ class LostAdvert(Advert):
         super().__init__(username)
     
     def get_message(self):
-        message = super().get_message()
-        message += f'''Стать: {self.sex}
+        message = f'''ЗАГУБИЛАСЬ ТВАРИНА!
+Тип: {self.type}
+Стать: {self.sex}
 Кличка: {self.name}
 Особливі прикмети: {self.features}
 Дата: {self.date}

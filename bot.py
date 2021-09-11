@@ -294,7 +294,7 @@ def found_anim_photo(message):
     fileID = message.photo[-1].file_id
     file_info = bot.get_file(fileID)
     downloaded_file = bot.download_file(file_info.file_path)
-    with open("found_image.jpg", 'wb') as new_file:
+    with open("image.jpg", 'wb') as new_file:
         new_file.write(downloaded_file)
     bot.send_message(message.chat.id, "Які особливі прикмети має знайдена тварина?")
     bot.register_next_step_handler_by_chat_id(message.chat.id, found_features)
@@ -304,7 +304,7 @@ def found_features(message):
     an_features = message.text
     with open('found.txt', 'a', encoding='utf-8') as found_an_f:
         found_an_f.write(an_features + '\n')
-    place, msg, photo = database.add_lost_advert(message.from_user.username, 'lost.txt', "image.jpg")
+    place, msg, photo = database.add_found_advert(message.from_user.username, 'found.txt', "image.jpg")
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
     send_adv_in_radius(place, msg, photo)
