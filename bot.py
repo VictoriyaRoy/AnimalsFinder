@@ -126,11 +126,13 @@ def callback_inline(call: telebot.types.CallbackQuery):
                 reply_markup=telebot.types.ReplyKeyboardRemove())
             with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
                 lost_an_f.write(date.strftime('%d.%m.%Y') + '\n')
+
             with open('lost.txt', 'r', encoding='utf-8') as lost_an_f:
                 an_type = lost_an_f.readline().strip()
                 an_sex = lost_an_f.readline().strip()
                 an_date = lost_an_f.readline().strip()
             found = database.find_among_found(an_type, an_sex, an_date)
+
             if found:
                 bot.send_message(call.from_user.id, "Перевірте, чи немає вашого улюбленця \
 серед останніх знайдених тварин. Якщо якесь оголошення може містити вашу тварину, \
@@ -197,7 +199,14 @@ def features(message):
     with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
         lost_an_f.write(an_feat + '\n')
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
-        Слідкуйте за своїми повідомленнями в Телеграмі.")
+Слідкуйте за своїми повідомленнями в Телеграмі.")
+    send_lost_adv(message.from_user.username, message.chat.id)
+
+
+def send_lost_adv(username: str):
+    msg, photo = database.add_lost_advert(username, 'lost.txt', "image.jpg")
+
+    
 
 
 @bot.message_handler(commands=['message'])

@@ -13,7 +13,8 @@ def read(table_name: str):
     Print dataFrame
     '''
     df = pd.read_sql(f'SELECT * FROM {table_name}', conn)
-    print(df)
+    lst = df["Message"].to_list()
+    print(lst)
 
 
 def clear_table(table_name: str):
@@ -44,36 +45,40 @@ def add_user(username: str, lat: float, lon: float):
     conn.commit()
 
 
-def add_lost_advert(username, text_file, photo):
+def add_lost_advert(username, text_file, photo_path):
     '''
     Add new advertisement about lost animal to database
     '''
-    adv = LostAdvert.create_from_file(username, text_file, photo)
+    adv = LostAdvert.create_from_file(username, text_file)
+    with open(photo_path, "rb") as file:
+        photo = file.read()
     cursor = conn.cursor()
     cursor.execute(
         '''
-        INSERT INTO LOST(Username, Type, Sex, Date, Advert)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO LOST(Username, Type, Sex, Date, Message, Photo)
+        VALUES (?, ?, ?, ?, ?, ?)
         ''',
-        (username, adv.type, adv.sex, adv.lost_date, adv))
+        (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
     conn.commit()
-    return adv.get_info_tuple()
+    return (adv.get_message(), photo)
 
 
-def add_found_advert(username, text_file, photo):
+def add_found_advert(username, text_file, photo_path):
     '''
     Add new advertisement about found animal to database
     '''
-    adv = FoundAdvert.create_from_file(username, text_file, photo)
+    adv = FoundAdvert.create_from_file(username, text_file)
+    with open(photo_path, "rb") as file:
+        photo = file.read()
     cursor = conn.cursor()
     cursor.execute(
         '''
-        INSERT INTO FOUND(Username, Type, Sex, Date, Advert)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO FOUND(Username, Type, Sex, Date, Message, Photo)
+        VALUES (?, ?, ?, ?, ?, ?)
         ''',
-        (username, adv.type, adv.sex, adv.date, adv))
+        (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
     conn.commit()
-    return adv.get_info_tuple()
+    return (adv.get_message(), photo)
 
 
 def find_among_found(type: str, sex: str, lost_date: datetime.date) -> set:
@@ -83,22 +88,24 @@ def find_among_found(type: str, sex: str, lost_date: datetime.date) -> set:
     query = f'SELECT * FROM FOUND WHERE Type = "{type}" AND (Sex = "{sex}" OR Sex IS NULL) AND Date >= "{lost_date}"'
     df = pd.read_sql(query, conn)
     advert_set = set()
-    for adv in df['Advert']:
-        advert_set.add(adv.get_info_tuple())
+    for msg in df['Message']:
+        photo = df[df['Message'] == msg]['Photo']
+        advert_set.add((msg, photo.to_list()[0]))
     return advert_set
 
 
-def find_among_lost(type: str, sex: str) -> DataFrame:
+def find_among_lost(type: str, sex: str) -> set:
     '''
-    Return DataFrame of adverts where type and sex are fits the request
+    Return set of adverts where type and sex are fits the request
     '''
     query = f'SELECT * FROM LOST WHERE Type = "{type}"'
     if sex:
         query +=  f' AND Sex = "{sex}"'
     df = pd.read_sql(query, conn)
     advert_set = set()
-    for adv in df['Advert']:
-        advert_set.add(adv.get_info_tuple())
+    for msg in df['Message']:
+        photo = df[df['Message'] == msg]['Photo']
+        advert_set.add((msg, photo.to_list()[0]))
     return advert_set
 
 

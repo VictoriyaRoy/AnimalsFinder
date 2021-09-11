@@ -4,29 +4,23 @@ def read_file_line(file):
     return file.readline().strip()
 
 class Advert:
-    def __init__(self, username, photo):
+    def __init__(self, username):
         self.username = username
-        self.photo = photo
     
     def get_message(self):
         message = f"Тварина: {self.type}\n"
         return message
-    
-    def get_info_tuple(self):
-        return (self.get_message(), self.photo)
-
 
 
 class FoundAdvert(Advert):
-    def __init__(self, username, photo):
-        super().__init__(username, photo)
+    def __init__(self, username):
+        super().__init__(username)
     
     def get_message(self):
         message = super().get_message()
         if (self.sex):
-            message += f"Стать: {self.sex}"
-        message += f'''
-Особливості: {self.features}
+            message += f"Стать: {self.sex}\n"
+        message += f'''Особливості: {self.features}
 Дата: {self.date}
 Місце: {self.place}
 Контакти: @{self.username} 
@@ -34,8 +28,8 @@ class FoundAdvert(Advert):
         return message
     
     @staticmethod
-    def create_from_file(username, text_file, photo):
-        adv = FoundAdvert(username, photo)
+    def create_from_file(username, text_file):
+        adv = FoundAdvert(username)
         with open(text_file, 'r', encoding='utf-8') as file:
             adv.type = read_file_line(file)
             adv.sex = read_file_line(file)
@@ -48,13 +42,12 @@ class FoundAdvert(Advert):
 
 
 class LostAdvert(Advert):
-    def __init__(self, username, photo):
-        super().__init__(username, photo)
+    def __init__(self, username):
+        super().__init__(username)
     
     def get_message(self):
         message = super().get_message()
-        message += f'''
-Стать: {self.sex}
+        message += f'''Стать: {self.sex}
 Кличка: {self.name}
 Особливі прикмети: {self.features}
 Дата: {self.date}
@@ -63,8 +56,8 @@ class LostAdvert(Advert):
         return message
     
     @staticmethod
-    def create_from_file(username, text_file, photo):
-        adv = FoundAdvert(username, photo)
+    def create_from_file(username, text_file):
+        adv = LostAdvert(username)
         with open(text_file, 'r', encoding='utf-8') as file:
             adv.type = read_file_line(file)
             adv.sex = read_file_line(file)
