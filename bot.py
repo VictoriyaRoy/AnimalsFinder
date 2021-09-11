@@ -6,8 +6,6 @@ from telebot_calendar import Calendar, CallbackData
 from conf import tok
 import database, location
 
-from found_animals import get_found_animals
-
 
 bot = telebot.TeleBot(tok)
 
@@ -128,7 +126,13 @@ def callback_inline(call: telebot.types.CallbackQuery):
                 reply_markup=telebot.types.ReplyKeyboardRemove())
             with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
                 lost_an_f.write(date.strftime('%d.%m.%Y'))
-            found = get_found_animals()
+            
+            with open('lost.txt', 'r', encoding='utf-8') as lost_an_f:
+                an_type = lost_an_f.readline().strip()
+                an_sex = lost_an_f.readline().strip()
+                an_date = lost_an_f.readline().strip()
+
+            found = database.find_among_found(an_type, an_sex, an_date)
             if found:
                 bot.send_message(call.from_user.id, "Перевірте, чи немає вашого улюбленця \
 серед останніх знайдених тварин. Якщо якесь оголошення може містити вашу тварину, \

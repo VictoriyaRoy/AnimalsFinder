@@ -3,6 +3,7 @@ import pandas as pd
 from pandas.core.frame import DataFrame
 import datetime
 import location
+from advert import FoundAdvert
 
 conn = sqlite3.connect('animals.db', check_same_thread=False)
 
@@ -71,13 +72,17 @@ def add_found_advert(username, type, sex, features, place, photo):
     conn.commit()
 
 
-def find_among_found(type: str, sex: str, lost_date: datetime.date) -> DataFrame:
+def find_among_found(type: str, sex: str, lost_date: datetime.date) -> set:
     '''
-    Return DataFrame of adverts where type, sex and date are fits the request
+    Return set of adverts where type, sex and date are fits the request
     '''
     query = f'SELECT * FROM FOUND WHERE Type = "{type}" AND (Sex = "{sex}" OR Sex IS NULL) AND Date >= "{lost_date}"'
     df = pd.read_sql(query, conn)
-    return df
+    df['Advert'] = df.apply(lambda x: FoundAdvert(x['Username'], x['Type'], x['Sex'], x['Features'], x['Date'], x['Place'], x['Photo']), axis = 1)
+    advert_set = set()
+    for adv in df['Advert']:
+        advert_set.add((adv.get_message(), None))
+    return advert_set
 
 
 def find_among_lost(type: str, sex: str) -> DataFrame:
@@ -116,3 +121,6 @@ def delete_lost_advert(username: str, animal_name: str):
     cursor = conn.cursor()
     cursor.execute(f'DELETE FROM Lost WHERE Username = "{username}" AND Name = "{animal_name}"')
     conn.commit()
+
+# add_found_advert("victoriya_roi", "Кіт", "Ч", "Котик Садового", "Площа Ринок", None)
+# read("FOUND")
