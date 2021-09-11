@@ -90,7 +90,22 @@ def find_among_lost(type: str, sex: str) -> DataFrame:
     df = pd.read_sql(query, conn)
     return df
 
-def find_users_in_radius(lat: float, lon: float, radius: float):
+
+def find_users_in_radius(lat: float, lon: float, radius: float) -> list:
+    '''
+    Return list of users in radius from coordinates
+    '''
     df = pd.read_sql(f'SELECT * FROM USER', conn)
     df['Distance'] = df.apply(lambda x: location.find_distance(x['Lat'], x['Lon'], lat, lon), axis = 1)
-    return df[df['Distance'] <= radius]
+    return df[df['Distance'] <= radius]['Username'].to_list()
+
+
+def lost_animals_of_user(username: str) -> list:
+    '''
+    Return list of animals of user
+    '''
+    query = f'SELECT Type, Name FROM LOST WHERE Username = "{username}"'
+    df = pd.read_sql(query, conn)
+    df['FullName'] = df.apply(lambda x: x['Type'] + ' ' + x['Name'], axis = 1)
+    print(df['FullName'].to_list())
+
