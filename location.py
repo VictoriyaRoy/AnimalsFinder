@@ -1,7 +1,7 @@
-import math
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.exc import GeocoderUnavailable
+from haversine import haversine
 
 geolocator = Nominatim(user_agent="main")
 geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
@@ -23,24 +23,8 @@ def find_coordinates(point: str) -> tuple:
     except (GeocoderUnavailable, AttributeError):
         return None
 
-def find_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+def find_distance(lat1, lon1, lat2, lon2):
     '''
-    Find distance between two points by coordinates
-    >>> round(find_distance(49.8177029, 24.0237912, 49.2204274, 28.3793954), -2)
-    321300.0
-    >>> find_distance(5.0, 600.0, 5.0, 600.0)
-    0.0
+    Return distance btw 2 coordinates in kilometres
     '''
-    radius = 6371e3
-    radian_lat1 = lat1 * math.pi/180
-    radian_lat2 = lat2 * math.pi/180
-    delta_lat = (lat2-lat1) * math.pi/180
-    delta_lon = (lon2-lon1) * math.pi/180
-
-    haversine = math.sin(delta_lat/2) * math.sin(delta_lat/2) + \
-            math.cos(radian_lat1) * math.cos(radian_lat2) * \
-            math.sin(delta_lon/2) * math.sin(delta_lon/2)
-    haversine = 2 * math.atan2(math.sqrt(haversine), math.sqrt(1-haversine))
-    haversine = radius * haversine
-
-    return haversine
+    return haversine((lat1, lon1), (lat2, lon2))
