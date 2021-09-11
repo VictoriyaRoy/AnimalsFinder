@@ -247,23 +247,24 @@ def found_an_sex_callback(query):
     if data in ('Ч', 'Ж', 'Н'):
         with open('found.txt', 'a', encoding='utf-8') as found_an_f:
             found_an_f.write(data + '\n')
-    bot.send_message(query.from_user.id, "Перевірте, чи немає знайденої тварини \
-серед останніх втрачених улюбленців. Якщо якесь оголошення містить схожу тварину, \
-зв'яжіться з власником.")
-    next_m = "Ви досі маєте потребу у створенні оголошення \
-чи вже знайшли власника тварини?"
 
     with open('found.txt', 'r', encoding='utf-8') as found_an_f:
         an_type = found_an_f.readline().strip()
         an_sex = found_an_f.readline().strip()
-    lost = database.find_among_lost()
+    lost = database.find_among_lost(an_type, an_sex)
 
     for announcement, photo in lost:
         if photo:
             bot.send_photo(query.from_user.id, photo, caption=announcement)
         else:
             bot.send_message(query.from_user.id, announcement)
+
     if lost:
+        bot.send_message(query.from_user.id, "Перевірте, чи немає знайденої тварини \
+серед останніх втрачених улюбленців. Якщо якесь оголошення містить схожу тварину, \
+зв'яжіться з власником.")
+        next_m = "Ви досі маєте потребу у створенні оголошення \
+чи вже знайшли власника тварини?"
         keyboard = telebot.types.InlineKeyboardMarkup()
         keyboard.row(telebot.types.InlineKeyboardButton('Досі потрібно оголошення', callback_data='found_announc: yes'))
         keyboard.row(telebot.types.InlineKeyboardButton('Дякую, тваринка знайшлася!', callback_data='found_announc: no'))
