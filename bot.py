@@ -308,6 +308,30 @@ def send_lost_adv(username: str):
         bot.send_photo(contact, photo, caption=msg)
 
 
+@bot.message_handler(commands=['mark_found'])
+def handle_mark_found(message):
+    names = {'Catt', 'Dogg'}
+    if not names:
+        bot.send_message(message.chat.id, 'У вас немає загублених тварин, щоб відмічати їх знайденими.\n\
+Можливо, ви хотіли викликати команду /found?')
+    else:
+        keyboard = telebot.types.InlineKeyboardMarkup()
+        for name in names:
+            keyboard.row(telebot.types.InlineKeyboardButton(name, callback_data=f'found_name: {name}'))
+        keyboard.row(telebot.types.InlineKeyboardButton('Скасувати операцію', callback_data='found_name: cancel'))
+        bot.send_message(message.chat.id, "Оберіть знайденого улюбленця для підтвердження операції.", reply_markup=keyboard)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('found_name'))
+def found_anim_callback(query):
+    data = query.data[12:]
+    if data == 'cancel':
+        bot.send_message(query.from_user.id, "Операцію скасовано.")
+    else:
+        bot.send_message(query.from_user.id, f"Вітаємо зі знаходженням {data}.")
+        # add your func
+
+
 @bot.message_handler(commands=['message'])
 def handle_message(message):
     markup = telebot.types.ReplyKeyboardMarkup()
