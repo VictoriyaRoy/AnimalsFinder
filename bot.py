@@ -6,6 +6,9 @@ from telebot_calendar import Calendar, CallbackData
 from conf import tok
 import database, location
 
+from found_animals import get_found_animals
+
+
 bot = telebot.TeleBot(tok)
 
 calendar = Calendar()
@@ -61,16 +64,10 @@ def an_type_callback(query):
     elif data[6:] in ('Кіт', 'Собака'):
         with open('lost.txt', 'w', encoding='utf-8') as lost_an_f:
             lost_an_f.write(data[6:] + '\n')
-        # lost = data[6:]
         keyboard = telebot.types.InlineKeyboardMarkup()
         keyboard.row(telebot.types.InlineKeyboardButton('Ч', callback_data='sex: Ч'))
         keyboard.row(telebot.types.InlineKeyboardButton('Ж', callback_data='sex: Ж'))
         bot.send_message(query.from_user.id, 'Якої статі ваша тварина?', reply_markup=keyboard)
-        # bot.send_message(query.from_user.id, "Якої статі ваша тварина?")
-        # bot.register_next_step_handler_by_chat_id(query.from_user.id, get_animal_sex)
-    # elif data in ('Ч', 'Ж'):
-    #     lost_sex = data
-    #     bot.send_message(query.from_user.id, f"ви загубили {lost} {lost_sex}")
 
 
 def get_animal_type(message):
@@ -81,7 +78,6 @@ def get_animal_type(message):
     keyboard.row(telebot.types.InlineKeyboardButton('Ч', callback_data='sex: Ч'))
     keyboard.row(telebot.types.InlineKeyboardButton('Ж', callback_data='sex: Ж'))
     bot.send_message(message.chat.id, 'Якої статі ваша тварина?', reply_markup=keyboard)
-    # bot.register_next_step_handler(message, get_animal_sex)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('sex'))
@@ -132,6 +128,16 @@ def callback_inline(call: telebot.types.CallbackQuery):
                 reply_markup=telebot.types.ReplyKeyboardRemove())
             with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
                 lost_an_f.write(date.strftime('%d.%m.%Y'))
+            found = get_found_animals()
+            if found:
+                bot.send_message(call.from_user.id, "Перевірте, чи немає вашого улюбленця \
+серед останніх знайдених тварин. Якщо якесь оголошення може містити вашу тварину, \
+зв'яжіться з людиною, яка його розмістила.")
+            for announcement, photo in found:
+                if photo:
+                    bot.send_photo(call.from_user.id, photo, caption=announcement)
+                else:
+                    bot.send_message(call.from_user.id, announcement)
 
 
 @bot.message_handler(commands=['message'])
