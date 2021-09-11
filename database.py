@@ -2,6 +2,7 @@ import sqlite3
 import pandas as pd
 from pandas.core.frame import DataFrame
 import datetime
+import location
 
 conn = sqlite3.connect('animals.db', check_same_thread=False)
 
@@ -37,6 +38,7 @@ def add_user(username: str, lat: float, lon: float):
     Add new user to database
     '''
     cursor = conn.cursor()
+    print(type(lat))
     cursor.execute('INSERT INTO USER(Username, Lat, Lon, Rating) VALUES (?, ?, ?, ?)', (username, lat, lon, 0))
     conn.commit()
 
@@ -87,3 +89,8 @@ def find_among_lost(type: str, sex: str) -> DataFrame:
         query +=  f' AND Sex = "{sex}"'
     df = pd.read_sql(query, conn)
     return df
+
+def find_users_in_radius(lat: float, lon: float, radius: float):
+    df = pd.read_sql(f'SELECT * FROM USER', conn)
+    df['Distance'] = df.apply(lambda x: location.find_distance(x['Lat'], x['Lon'], lat, lon), axis = 1)
+    return df[df['Distance'] <= radius]

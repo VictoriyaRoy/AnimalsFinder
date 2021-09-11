@@ -27,4 +27,6 @@ def find_distance(lat1, lon1, lat2, lon2):
     '''
     Return distance btw 2 coordinates in kilometres
     '''
+    lat1 = float(lat1)
+    lon1 = float(lon1)
     return haversine((lat1, lon1), (lat2, lon2))
