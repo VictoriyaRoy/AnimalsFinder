@@ -121,3 +121,6 @@ def delete_lost_advert(username: str, animal_name: str):
     cursor = conn.cursor()
     cursor.execute(f'DELETE FROM Lost WHERE Username = "{username}" AND Name = "{animal_name}"')
     conn.commit()
+
+# add_found_advert("victoriya_roi", "Кіт", "Ч", "Котик Садового", "Площа Ринок", None)
+# read("FOUND")

@@ -17,6 +17,3 @@ class FoundAdvert:
 Контакти: @{self.username} 
 '''
         return message
-
-
-        
