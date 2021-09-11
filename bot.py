@@ -1,6 +1,6 @@
 import telebot
-import user
 from conf import tok
+import database, location
 
 bot = telebot.TeleBot(tok)
 
@@ -14,16 +14,20 @@ def handle_start(message):
 Разом ми зможемо допомогати господарам знаходити їхніх втрачених тваринок.")
     # bot.send_location(chat_id, lat, lon)
     username = message.from_user.username
-    if user.is_new_user(username):
+    if database.is_new_user(username):
         bot.reply_to(message, "Уведіть адресу свого будинку, будь ласка.")
         bot.register_next_step_handler(message, address)
 
 
 def address(message):
     addr = message.text
-    # There will be convertion address to coordinates
-    user.add_user(message.from_user.username, 0, 0)
-    bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
+    coord = location.find_house_coordinates(addr)
+    if coord:
+        database.add_user(message.from_user.username, coord[0], coord[1])
+        bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
+    else:
+        bot.send_message(message.chat.id, "Вибачте, введенна адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
+
 
 def handle_reply(message):
     bot.reply_to(message, message + ' Thanks')

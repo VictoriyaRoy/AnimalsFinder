@@ -35,7 +35,7 @@ def add_user(username: str, lat: float, lon: float):
     Add new user to database
     '''
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO USER(Username, Lat, Lon) VALUES (?, ?, ?, ?)', (username, lat, lon, 0))
+    cursor.execute('INSERT INTO USER(Username, Lat, Lon, Rating) VALUES (?, ?, ?, ?)', (username, lat, lon, 0))
     conn.commit()
 
 
@@ -52,6 +52,7 @@ def add_lost_advert(username, type, sex, name, features, date, place, photo):
         (username, type, sex, name, features, date, place, photo))
     conn.commit()
 
+
 def add_found_advert(username, type, sex, features, date, place, photo):
     '''
     Add new advertisement about found animal to database
@@ -65,6 +66,6 @@ def add_found_advert(username, type, sex, features, date, place, photo):
         (username, type, sex, features, date, place, photo))
     conn.commit()
 
-# clear_table("LOST")
+# clear_table("USER")
 # add_found_advert("test", "cat", "F", "Blue eyes", "24/04/21", "Lviv", "photo.jpg")
-# read("FOUND")
+read("USER")
