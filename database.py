@@ -106,7 +106,7 @@ def lost_animals_of_user(username: str) -> dict:
     '''
     query = f'SELECT Name FROM LOST WHERE Username = "{username}"'
     df = pd.read_sql(query, conn)
-    print(df['Name'].to_list())
+    return set(df['Name'].to_list())
 
 
 def delete_lost_advert(username: str, animal_name: str):
@@ -116,4 +116,3 @@ def delete_lost_advert(username: str, animal_name: str):
     cursor = conn.cursor()
     cursor.execute(f'DELETE FROM Lost WHERE Username = "{username}" AND Name = "{animal_name}"')
     conn.commit()
-
