@@ -380,16 +380,14 @@ def found_anim_callback(query):
         bot.send_message(query.from_user.id, f"Вітаємо зі знаходженням {data}.")
 
 
-@bot.message_handler(commands=['message'])
+@bot.message_handler(commands=['help'])
 def handle_message(message):
-    markup = telebot.types.ReplyKeyboardMarkup()
-    buttonA = telebot.types.KeyboardButton('A')
-    buttonB = telebot.types.KeyboardButton('B')
-    buttonC = telebot.types.KeyboardButton('C')
+    bot.send_message(message.chat.id, "Цей бот допомагає шукати загублених тварин у Львові.\n\n\
+Якщо ви ніколи ним не користувалися, натисніть /start, щоб зареєструватися.\n\
+Якщо ви побачили тварину, яка може бути загубленою, натисніть /found.\n\
+Якщо ви загубили тварину, натисніть /lost.\nЯкщо ви знайшли свою тварину, натисніть /mark_found.\n\n\
+Якщо у вас є пропозиції для покращення, звертайтеся за контактами @liubliub та @victoriya_roi.")
 
-    markup.row(buttonA, buttonB, buttonC)
-
-    bot.send_message(message.chat.id, 'It works!', reply_markup=markup)
 
 
 
