@@ -396,7 +396,10 @@ def handle_message(message):
 Якщо у вас є пропозиції для покращення, звертайтеся за контактами @liubliub та @victoriya_roi.")
 
 
-
+@bot.message_handler(commands=['rating'])
+def handle_rating(message):
+    rating_msg = database.get_rating()
+    bot.send_message(message.chat.id, rating_msg)
 
 
 
