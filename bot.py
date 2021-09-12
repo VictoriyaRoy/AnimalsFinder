@@ -199,7 +199,7 @@ def lost_address(message):
     if coord:
         txt_file = str(message.from_user.id) + '.txt'
         with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
-            lost_an_f.write(coord[0] + ', ' + coord[1] + '\n')
+            lost_an_f.write(str(coord[0]) + ', ' + str(coord[1]) + '\n')
         bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію вашої тварини.")
         bot.register_next_step_handler_by_chat_id(message.chat.id, anim_photo)
 
