@@ -61,7 +61,7 @@ class LostAdvert(Advert):
             adv.sex = read_file_line(file)
             adv.date = read_file_line(file)
             adv.name = read_file_line(file)
-            adv.place = read_file_line(file)
+            adv.coord = (map(float, read_file_line(file).split(", ")))
             adv.features = read_file_line(file)
         return adv
 
