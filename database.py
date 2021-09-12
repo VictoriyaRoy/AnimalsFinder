@@ -39,7 +39,6 @@ def add_user(username: str, lat: float, lon: float, user_id):
     Add new user to database
     '''
     cursor = conn.cursor()
-    print(type(lat))
     cursor.execute('INSERT INTO USER(Username, Lat, Lon, Rating, UserId) VALUES (?, ?, ?, ?, ?)', (username, lat, lon, 0, user_id))
     conn.commit()
 
@@ -54,10 +53,10 @@ def add_lost_advert(username, text_file, photo_path):
     cursor = conn.cursor()
     cursor.execute(
         '''
-        INSERT INTO LOST(Username, Type, Sex, Date, Message, Photo)
+        INSERT INTO LOST(Username, Type, Sex, Name, Message, Photo)
         VALUES (?, ?, ?, ?, ?, ?)
         ''',
-        (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
+        (username, adv.type, adv.sex, adv.name, adv.get_message(), photo))
     conn.commit()
     return (adv.place, adv.get_message(), photo)
 
@@ -77,14 +76,14 @@ def add_found_advert(username, text_file, photo_path):
         ''',
         (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
     conn.commit()
-    return (adv.get_message(), photo)
+    return (adv.place, adv.get_message(), photo)
 
 
 def find_among_found(type: str, sex: str, lost_date: datetime.date) -> set:
     '''
     Return set of adverts where type, sex and date are fits the request
     '''
-    query = f'SELECT * FROM FOUND WHERE Type = "{type}" AND (Sex = "{sex}" OR Sex IS NULL) AND Date >= "{lost_date}"'
+    query = f'SELECT * FROM FOUND WHERE Type = "{type}" AND (Sex = "{sex}" OR Sex = "Н") AND Date >= "{lost_date}"'
     df = pd.read_sql(query, conn)
     advert_set = set()
     for msg in df['Message']:
@@ -98,7 +97,7 @@ def find_among_lost(type: str, sex: str) -> set:
     Return set of adverts where type and sex are fits the request
     '''
     query = f'SELECT * FROM LOST WHERE Type = "{type}"'
-    if sex:
+    if sex != 'Н':
         query +=  f' AND Sex = "{sex}"'
     df = pd.read_sql(query, conn)
     advert_set = set()

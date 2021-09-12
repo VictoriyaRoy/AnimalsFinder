@@ -1,12 +1,15 @@
+import os
 import telebot
+from telebot.types import Message
 import telebot_calendar
 import datetime
 from telebot_calendar import Calendar, CallbackData
 
 from conf import tok
-import database, location
-from database import find_users_in_radius
+import database
+import location
 
+RADIUS = 3
 
 bot = telebot.TeleBot(tok)
 
@@ -64,7 +67,8 @@ def an_type_callback(query):
         bot.send_message(query.from_user.id, "Уточніть, яка тварина у вас загубилася, будь ласка.")
         bot.register_next_step_handler_by_chat_id(query.from_user.id, get_animal_type)
     elif data[6:] in ('Кіт', 'Собака'):
-        with open('lost.txt', 'w', encoding='utf-8') as lost_an_f:
+        txt_file = str(query.from_user.id) + '.txt'
+        with open(txt_file, 'w', encoding='utf-8') as lost_an_f:
             lost_an_f.write(data[6:] + '\n')
         keyboard = telebot.types.InlineKeyboardMarkup()
         keyboard.row(telebot.types.InlineKeyboardButton('Ч', callback_data='sex: Ч'))
@@ -74,7 +78,8 @@ def an_type_callback(query):
 
 def get_animal_type(message):
     anim_type = message.text
-    with open('lost.txt', 'w', encoding='utf-8') as lost_an_f:
+    txt_file = str(message.from_user.id) + '.txt'
+    with open(txt_file, 'w', encoding='utf-8') as lost_an_f:
         lost_an_f.write(anim_type + '\n')
     keyboard = telebot.types.InlineKeyboardMarkup()
     keyboard.row(telebot.types.InlineKeyboardButton('Ч', callback_data='sex: Ч'))
@@ -86,7 +91,8 @@ def get_animal_type(message):
 def an_sex_callback(query):
     data = query.data
     if data[5:] in ('Ч', 'Ж'):
-        with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+        txt_file = str(query.from_user.id) + '.txt'
+        with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
             lost_an_f.write(data[5:] + '\n')
     bot.send_message(
         query.from_user.id,
@@ -128,10 +134,12 @@ def callback_inline(call: telebot.types.CallbackQuery):
                 chat_id=call.from_user.id,
                 text=f"Ви обрали {date.strftime('%d.%m.%Y')}",
                 reply_markup=telebot.types.ReplyKeyboardRemove())
-            with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+
+            txt_file = str(call.from_user.id) + '.txt'
+            with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
                 lost_an_f.write(date.strftime('%d.%m.%Y') + '\n')
 
-            with open('lost.txt', 'r', encoding='utf-8') as lost_an_f:
+            with open(txt_file, 'r', encoding='utf-8') as lost_an_f:
                 an_type = lost_an_f.readline().strip()
                 an_sex = lost_an_f.readline().strip()
                 an_date = lost_an_f.readline().strip()
@@ -170,7 +178,8 @@ def announc_callback(query):
 
 def anim_name(message):
     lost_name = message.text
-    with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+    txt_file = str(message.from_user.id) + '.txt'
+    with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
         lost_an_f.write(lost_name + '\n')
     bot.send_message(message.chat.id, "Де загубилася ваша тваринка?\n\
 Можете надіслати геолокацію або написати місце текстом.")
@@ -188,7 +197,8 @@ def lost_address(message):
             bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
             bot.register_next_step_handler_by_chat_id(message.chat.id, lost_address)
     if coord:
-        with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+        txt_file = str(message.from_user.id) + '.txt'
+        with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
             lost_an_f.write(coord[0] + ', ' + coord[1] + '\n')
         bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію вашої тварини.")
         bot.register_next_step_handler_by_chat_id(message.chat.id, anim_photo)
@@ -198,7 +208,8 @@ def anim_photo(message):
     fileID = message.photo[-1].file_id
     file_info = bot.get_file(fileID)
     downloaded_file = bot.download_file(file_info.file_path)
-    with open("image.jpg", 'wb') as new_file:
+    img_file = str(message.from_user.id) + '.jpg'
+    with open(img_file, 'wb') as new_file:
         new_file.write(downloaded_file)
     bot.send_message(message.chat.id, "Які особливі прикмети є у вашого улюбленця?")
     bot.register_next_step_handler_by_chat_id(message.chat.id, features)
@@ -206,11 +217,17 @@ def anim_photo(message):
 
 def features(message):
     an_feat = message.text
-    with open('lost.txt', 'a', encoding='utf-8') as lost_an_f:
+    userId = str(message.from_user.id)
+    txt_file = userId + '.txt'
+    img_file = userId + '.jpg'
+    with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
         lost_an_f.write(an_feat + '\n')
+    place, msg, photo = database.add_lost_advert(message.from_user.username, txt_file, img_file)
+    os.remove(txt_file)
+    os.remove(img_file)
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-    send_lost_adv(message.from_user.username)
+    send_adv_in_radius(place, msg, photo)
 
 
 @bot.message_handler(commands=['found'])
@@ -233,7 +250,8 @@ def found_an_type_callback(query):
         bot.send_message(query.from_user.id, "Уточніть, яку тварину ви знайшли, будь ласка.")
         bot.register_next_step_handler_by_chat_id(query.from_user.id, get_found_animal_type)
     elif data in ('Кіт', 'Собака'):
-        with open('found.txt', 'w', encoding='utf-8') as found_an_f:
+        txt_file = str(query.from_user.id) + '.txt'
+        with open(txt_file, 'w', encoding='utf-8') as found_an_f:
             found_an_f.write(data + '\n')
         keyboard = telebot.types.InlineKeyboardMarkup()
         keyboard.row(telebot.types.InlineKeyboardButton('Ч', callback_data='found_sex: Ч'))
@@ -244,7 +262,8 @@ def found_an_type_callback(query):
 
 def get_found_animal_type(message):
     anim_type = message.text
-    with open('found.txt', 'w', encoding='utf-8') as found_an_f:
+    txt_file = str(message.from_user.id) + '.txt'
+    with open(txt_file, 'w', encoding='utf-8') as found_an_f:
         found_an_f.write(anim_type + '\n')
     keyboard = telebot.types.InlineKeyboardMarkup()
     keyboard.row(telebot.types.InlineKeyboardButton('Ч', callback_data='found_sex: Ч'))
@@ -256,20 +275,27 @@ def get_found_animal_type(message):
 @bot.callback_query_handler(func=lambda call: call.data.startswith('found_sex'))
 def found_an_sex_callback(query):
     data = query.data[11:]
+    txt_file = str(query.from_user.id) + '.txt'
     if data in ('Ч', 'Ж', 'Н'):
-        with open('found.txt', 'a', encoding='utf-8') as found_an_f:
+        with open(txt_file, 'a', encoding='utf-8') as found_an_f:
             found_an_f.write(data + '\n')
-    bot.send_message(query.from_user.id, "Перевірте, чи немає знайденої тварини \
+
+    with open(txt_file, 'r', encoding='utf-8') as found_an_f:
+        an_type = found_an_f.readline().strip()
+        an_sex = found_an_f.readline().strip()
+    lost = database.find_among_lost(an_type, an_sex)
+
+    if lost:
+        bot.send_message(query.from_user.id, "Перевірте, чи немає знайденої тварини \
 серед останніх втрачених улюбленців. Якщо якесь оголошення містить схожу тварину, \
 зв'яжіться з власником.")
-    next_m = "Ви досі маєте потребу у створенні оголошення \
+        for announcement, photo in lost:
+            if photo:
+                bot.send_photo(query.from_user.id, photo, caption=announcement)
+            else:
+                bot.send_message(query.from_user.id, announcement)        
+        next_m = "Ви досі маєте потребу у створенні оголошення \
 чи вже знайшли власника тварини?"
-    for announcement, photo in lost:
-        if photo:
-            bot.send_photo(query.from_user.id, photo, caption=announcement)
-        else:
-            bot.send_message(query.from_user.id, announcement)
-    if lost:
         keyboard = telebot.types.InlineKeyboardMarkup()
         keyboard.row(telebot.types.InlineKeyboardButton('Досі потрібно оголошення', callback_data='found_announc: yes'))
         keyboard.row(telebot.types.InlineKeyboardButton('Дякую, тваринка знайшлася!', callback_data='found_announc: no'))
@@ -291,7 +317,8 @@ def found_announc_callback(query):
 
 def found_anim_place(message):
     found_place = message.text
-    with open('found.txt', 'a', encoding='utf-8') as found_an_f:
+    txt_file = str(message.from_user.id) + '.txt'
+    with open(txt_file, 'a', encoding='utf-8') as found_an_f:
         found_an_f.write(found_place + '\n')
     bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію знайденої тварини.")
     bot.register_next_step_handler_by_chat_id(message.chat.id, found_anim_photo)
@@ -301,7 +328,8 @@ def found_anim_photo(message):
     fileID = message.photo[-1].file_id
     file_info = bot.get_file(fileID)
     downloaded_file = bot.download_file(file_info.file_path)
-    with open("found_image.jpg", 'wb') as new_file:
+    img_file = str(message.from_user.id) + '.jpg'
+    with open(img_file, 'wb') as new_file:
         new_file.write(downloaded_file)
     bot.send_message(message.chat.id, "Які особливі прикмети має знайдена тварина?")
     bot.register_next_step_handler_by_chat_id(message.chat.id, found_features)
@@ -309,23 +337,28 @@ def found_anim_photo(message):
 
 def found_features(message):
     an_features = message.text
-    with open('found.txt', 'a', encoding='utf-8') as found_an_f:
+    userId = str(message.from_user.id)
+    txt_file = userId + '.txt'
+    img_file = userId + '.jpg'
+    with open(txt_file, 'a', encoding='utf-8') as found_an_f:
         found_an_f.write(an_features + '\n')
+    place, msg, photo = database.add_found_advert(message.from_user.username, txt_file, img_file)
+    os.remove(txt_file)
+    os.remove(img_file)
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-#     send_lost_adv(message.from_user.username)
+    send_adv_in_radius(place, msg, photo)
 
 
-def send_lost_adv(username: str):
-    place, msg, photo = database.add_lost_advert(username, 'lost.txt', "image.jpg")
-    contacts = find_users_in_radius(place, 3)
+def send_adv_in_radius(place: str, msg: str, photo):
+    contacts = database.find_users_in_radius(place, RADIUS)
     for contact in contacts:
         bot.send_photo(contact, photo, caption=msg)
 
 
 @bot.message_handler(commands=['mark_found'])
 def handle_mark_found(message):
-    names = {'Catt', 'Dogg'}
+    names = database.lost_animals_of_user(message.from_user.username)
     if not names:
         bot.send_message(message.chat.id, 'У вас немає загублених тварин, щоб відмічати їх знайденими.\n\
 Можливо, ви хотіли викликати команду /found?')
@@ -343,8 +376,8 @@ def found_anim_callback(query):
     if data == 'cancel':
         bot.send_message(query.from_user.id, "Операцію скасовано.")
     else:
+        database.delete_lost_advert(query.from_user.username, data)
         bot.send_message(query.from_user.id, f"Вітаємо зі знаходженням {data}.")
-        # add your func
 
 
 @bot.message_handler(commands=['message'])
