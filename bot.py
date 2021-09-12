@@ -218,16 +218,17 @@ def anim_photo(message):
 def features(message):
     an_feat = message.text
     userId = str(message.from_user.id)
+    username = message.from_user.username
     txt_file = userId + '.txt'
     img_file = userId + '.jpg'
     with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
         lost_an_f.write(an_feat + '\n')
-    place, msg, photo = database.add_lost_advert(message.from_user.username, txt_file, img_file)
+    coord, msg, photo = database.add_lost_advert(username, txt_file, img_file)
     os.remove(txt_file)
     os.remove(img_file)
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-    send_adv_in_radius(place, msg, photo)
+    send_adv_in_radius(username, coord, msg, photo)
 
 
 @bot.message_handler(commands=['found'])
@@ -338,20 +339,23 @@ def found_anim_photo(message):
 def found_features(message):
     an_features = message.text
     userId = str(message.from_user.id)
+    username = message.from_user.username
     txt_file = userId + '.txt'
     img_file = userId + '.jpg'
     with open(txt_file, 'a', encoding='utf-8') as found_an_f:
         found_an_f.write(an_features + '\n')
-    place, msg, photo = database.add_found_advert(message.from_user.username, txt_file, img_file)
+    place, msg, photo = database.add_found_advert(username, txt_file, img_file)
     os.remove(txt_file)
     os.remove(img_file)
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-    send_adv_in_radius(place, msg, photo)
+#TODO: check if coord not None, otherwise try again 
+    coord = location.find_house_coordinates(place)
+    send_adv_in_radius(username, coord, msg, photo)
 
 
-def send_adv_in_radius(place: str, msg: str, photo):
-    contacts = database.find_users_in_radius(place, RADIUS)
+def send_adv_in_radius(username: str, coord: tuple, msg: str, photo):
+    contacts = database.find_users_in_radius(username, coord, RADIUS)
     for contact in contacts:
         bot.send_photo(contact, photo, caption=msg)
 

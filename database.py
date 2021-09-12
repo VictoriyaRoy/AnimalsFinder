@@ -58,7 +58,7 @@ def add_lost_advert(username, text_file, photo_path):
         ''',
         (username, adv.type, adv.sex, adv.name, adv.get_message(), photo))
     conn.commit()
-    return (adv.place, adv.get_message(), photo)
+    return (adv.coord, adv.get_message(), photo)
 
 
 def add_found_advert(username, text_file, photo_path):
@@ -107,13 +107,12 @@ def find_among_lost(type: str, sex: str) -> set:
     return advert_set
 
 
-def find_users_in_radius(place: str, radius: float) -> list:
+def find_users_in_radius(username:str, coord: tuple, radius: float) -> list:
     '''
     Return list of users in radius from coordinates
     '''
-    coord = location.find_house_coordinates(place)
     if coord:
-        df = pd.read_sql(f'SELECT * FROM USER', conn)
+        df = pd.read_sql(f'SELECT * FROM USER WHERE Username <> "{username}"', conn)
         df['Distance'] = df.apply(lambda x: location.find_distance(x['Lat'], x['Lon'], coord[0], coord[1]), axis = 1)
         return df[df['Distance'] <= radius]['UserId'].to_list()
     return None
