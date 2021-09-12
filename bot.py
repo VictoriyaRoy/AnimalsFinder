@@ -28,18 +28,23 @@ def handle_start(message):
 Разом ми зможемо допомогати господарам знаходити їхніх втрачених тваринок.")
     username = message.from_user.username
     if database.is_new_user(username):
-        bot.send_message(message.chat.id, "Уведіть адресу свого будинку, будь ласка.")
+        bot.send_message(message.chat.id, "Уведіть адресу свого будинку або надішліть його геолокацію, будь ласка.")
         bot.register_next_step_handler_by_chat_id(message.chat.id, address)
 
 
 def address(message):
-    addr = message.text
-    coord = location.find_house_coordinates(addr)
+    coord = None
+    if message.location is not None:
+        coord = message.location.latitude, message.location.longitude
+    if not coord:
+        addr = message.text
+        coord = location.find_house_coordinates(addr)
+        if not coord:
+            bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
+            bot.register_next_step_handler_by_chat_id(message.chat.id, address)
     if coord:
         database.add_user(message.from_user.username, coord[0], coord[1], message.chat.id)
         bot.send_message(message.chat.id, "Дякуємо! Ви успішно зареєструвались.")
-    else:
-        bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
 
 
 @bot.message_handler(commands=['lost'])
@@ -176,17 +181,27 @@ def anim_name(message):
     txt_file = str(message.from_user.id) + '.txt'
     with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
         lost_an_f.write(lost_name + '\n')
-    bot.send_message(message.chat.id, "Де загубилася ваша тваринка?")
+    bot.send_message(message.chat.id, "Де загубилася ваша тваринка?\n\
+Можете надіслати геолокацію або написати місце текстом.")
     bot.register_next_step_handler_by_chat_id(message.chat.id, lost_address)
 
 
 def lost_address(message):
-    addr = message.text
-    txt_file = str(message.from_user.id) + '.txt'
-    with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
-        lost_an_f.write(addr + '\n')
-    bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію вашої тварини.")
-    bot.register_next_step_handler_by_chat_id(message.chat.id, anim_photo)
+    coord = None
+    if message.location is not None:
+        coord = message.location.latitude, message.location.longitude
+    if not coord:
+        addr = message.text
+        coord = location.find_house_coordinates(addr)
+        if not coord:
+            bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
+            bot.register_next_step_handler_by_chat_id(message.chat.id, lost_address)
+    if coord:
+        txt_file = str(message.from_user.id) + '.txt'
+        with open(txt_file, 'a', encoding='utf-8') as lost_an_f:
+            lost_an_f.write(coord[0] + ', ' + coord[1] + '\n')
+        bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію вашої тварини.")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, anim_photo)
 
 
 def anim_photo(message):
