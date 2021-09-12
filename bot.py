@@ -387,7 +387,14 @@ def found_anim_callback(query):
         bot.send_message(query.from_user.id, "Операцію скасовано.")
     else:
         database.delete_lost_advert(query.from_user.username, data)
-        bot.send_message(query.from_user.id, f"Вітаємо зі знаходженням {data}.")
+        bot.send_message(query.from_user.id, f"Уведіть ім'я користувача, який допоміг вам знайти {data}.")
+        bot.register_next_step_handler_by_chat_id(query.from_user.id, found_user_helper)
+
+
+def found_user_helper(message):
+    helper = message.text
+    # add rating to helper here
+    bot.send_message(message.chat.id, "Дякуємо! Вітаємо зі знаходженням улюбленця.")
 
 
 @bot.message_handler(commands=['help'])
