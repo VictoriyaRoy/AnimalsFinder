@@ -400,7 +400,9 @@ def found_anim_callback(query):
 
 def found_user_helper(message):
     helper = message.text
-    # add rating to helper here
+    if helper[0] == '@':
+        helper = helper[1:]
+    database.add_score(helper, 5)
     bot.send_message(message.chat.id, "Дякуємо! Вітаємо зі знаходженням улюбленця.")
 
 
@@ -415,7 +417,7 @@ def handle_message(message):
 
 @bot.message_handler(commands=['rating'])
 def handle_rating(message):
-    rating_msg = database.get_rating()
+    rating_msg = database.get_rating(message.from_user.username)
     bot.send_message(message.chat.id, rating_msg)
 
 
