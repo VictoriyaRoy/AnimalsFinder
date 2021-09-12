@@ -318,11 +318,15 @@ def found_announc_callback(query):
 
 def found_anim_place(message):
     found_place = message.text
-    txt_file = str(message.from_user.id) + '.txt'
-    with open(txt_file, 'a', encoding='utf-8') as found_an_f:
-        found_an_f.write(found_place + '\n')
-    bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію знайденої тварини.")
-    bot.register_next_step_handler_by_chat_id(message.chat.id, found_anim_photo)
+    if not location.find_house_coordinates(found_place):
+        bot.send_message(message.chat.id, "Вибачте, введена адреса не знайдена.\nСпробуйте, будь ласка, ще раз.")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, found_anim_place)
+    else:
+        txt_file = str(message.from_user.id) + '.txt'
+        with open(txt_file, 'a', encoding='utf-8') as found_an_f:
+            found_an_f.write(found_place + '\n')
+        bot.send_message(message.chat.id, "Надішліть, будь ласка, фотографію знайденої тварини.")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, found_anim_photo)
 
 
 def found_anim_photo(message):
@@ -349,7 +353,6 @@ def found_features(message):
     os.remove(img_file)
     bot.send_message(message.chat.id, "Дякуємо за звернення. \
 Слідкуйте за своїми повідомленнями в Телеграмі.")
-#TODO: check if coord not None, otherwise try again 
     coord = location.find_house_coordinates(place)
     send_adv_in_radius(username, coord, msg, photo)
 
