@@ -147,7 +147,7 @@ def callback_inline(call: telebot.types.CallbackQuery):
 
             if found:
                 bot.send_message(call.from_user.id, "Перевірте, чи немає вашого улюбленця \
-серед останніх знайдених тварин. Якщо якесь оголошення може містити вашу тварину, \
+серед останніх знайдених тварин. Якщо якесь оголошення містить вашу тварину, \
 зв'яжіться з людиною, яка його розмістила.")
                 next_m = "Ви досі маєте потребу у створенні оголошення для пошуку тварини \
 чи вже знайшли свого улюбленця?"
@@ -204,15 +204,20 @@ def lost_address(message):
         bot.register_next_step_handler_by_chat_id(message.chat.id, anim_photo)
 
 
+@bot.message_handler(content_types=['photo'])
 def anim_photo(message):
-    fileID = message.photo[-1].file_id
-    file_info = bot.get_file(fileID)
-    downloaded_file = bot.download_file(file_info.file_path)
-    img_file = str(message.from_user.id) + '.jpg'
-    with open(img_file, 'wb') as new_file:
-        new_file.write(downloaded_file)
-    bot.send_message(message.chat.id, "Які особливі прикмети є у вашого улюбленця?")
-    bot.register_next_step_handler_by_chat_id(message.chat.id, features)
+    if message.photo is not None:
+        fileID = message.photo[-1].file_id
+        file_info = bot.get_file(fileID)
+        downloaded_file = bot.download_file(file_info.file_path)
+        img_file = str(message.from_user.id) + '.jpg'
+        with open(img_file, 'wb') as new_file:
+            new_file.write(downloaded_file)
+        bot.send_message(message.chat.id, "Які особливі прикмети є у вашого улюбленця?")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, features)
+    else:
+        bot.send_message(message.chat.id, "Вибачте, вам потрібно надіслати фото.\nСпробуйте, будь ласка, ще раз.")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, anim_photo)
 
 
 def features(message):
@@ -302,7 +307,7 @@ def found_an_sex_callback(query):
         keyboard.row(telebot.types.InlineKeyboardButton('Дякую, тваринка знайшлася!', callback_data='found_announc: no'))
         bot.send_message(query.from_user.id, next_m, reply_markup=keyboard)
     else:
-        bot.send_message(query.from_user.id, "Де ви знайшли цю тварину?")
+        bot.send_message(query.from_user.id, "Де ви знайшли цю тварину? Напишіть, будь ласка, текстом.")
         bot.register_next_step_handler_by_chat_id(query.from_user.id, found_anim_place)
 
 
@@ -310,7 +315,7 @@ def found_an_sex_callback(query):
 def found_announc_callback(query):
     data = query.data[15:]
     if data == 'yes':
-        bot.send_message(query.from_user.id, "Де ви знайшли цю тварину?")
+        bot.send_message(query.from_user.id, "Де ви знайшли цю тварину? Напишіть, будь ласка, текстом.")
         bot.register_next_step_handler_by_chat_id(query.from_user.id, found_anim_place)
     else:
         bot.send_message(query.from_user.id, "Дякуємо за допомогу! Ваш внесок важливий для нас❤️")
@@ -329,15 +334,20 @@ def found_anim_place(message):
         bot.register_next_step_handler_by_chat_id(message.chat.id, found_anim_photo)
 
 
+@bot.message_handler(content_types=['photo'])
 def found_anim_photo(message):
-    fileID = message.photo[-1].file_id
-    file_info = bot.get_file(fileID)
-    downloaded_file = bot.download_file(file_info.file_path)
-    img_file = str(message.from_user.id) + '.jpg'
-    with open(img_file, 'wb') as new_file:
-        new_file.write(downloaded_file)
-    bot.send_message(message.chat.id, "Які особливі прикмети має знайдена тварина?")
-    bot.register_next_step_handler_by_chat_id(message.chat.id, found_features)
+    if message.photo is not None:
+        fileID = message.photo[-1].file_id
+        file_info = bot.get_file(fileID)
+        downloaded_file = bot.download_file(file_info.file_path)
+        img_file = str(message.from_user.id) + '.jpg'
+        with open(img_file, 'wb') as new_file:
+            new_file.write(downloaded_file)
+        bot.send_message(message.chat.id, "Які особливі прикмети має знайдена тварина?")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, found_features)
+    else:
+        bot.send_message(message.chat.id, "Вибачте, вам потрібно надіслати фото.\nСпробуйте, будь ласка, ще раз.")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, found_anim_photo)
 
 
 def found_features(message):
@@ -384,7 +394,14 @@ def found_anim_callback(query):
         bot.send_message(query.from_user.id, "Операцію скасовано.")
     else:
         database.delete_lost_advert(query.from_user.username, data)
-        bot.send_message(query.from_user.id, f"Вітаємо зі знаходженням {data}.")
+        bot.send_message(query.from_user.id, f"Уведіть ім'я користувача, який допоміг вам знайти {data}.")
+        bot.register_next_step_handler_by_chat_id(query.from_user.id, found_user_helper)
+
+
+def found_user_helper(message):
+    helper = message.text
+    # add rating to helper here
+    bot.send_message(message.chat.id, "Дякуємо! Вітаємо зі знаходженням улюбленця.")
 
 
 @bot.message_handler(commands=['help'])
