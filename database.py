@@ -76,6 +76,7 @@ def add_found_advert(username, text_file, photo_path):
         ''',
         (username, adv.type, adv.sex, adv.date, adv.get_message(), photo))
     conn.commit()
+    add_score(username, 1)
     return (adv.place, adv.get_message(), photo)
 
 
@@ -135,4 +136,25 @@ def delete_lost_advert(username: str, animal_name: str):
     '''
     cursor = conn.cursor()
     cursor.execute(f'DELETE FROM Lost WHERE Username = "{username}" AND Name = "{animal_name}"')
+    conn.commit()
+
+def get_rating(username):
+    query = f'SELECT * FROM User ORDER BY Rating DESC'
+    df = pd.read_sql(query, conn)
+    liders_names = df['Username'].to_list()[:3]
+    medals = ['🥇', '🥈', '🥉']
+    msg = "РЕЙТИНГ ВОЛОНТЕРІВ\n"
+    for index in range(len(liders_names)):
+        user = liders_names[index]
+        rating = df[df['Username']==user]['Rating'].to_list()[0]
+        msg += f'{medals[index]} @{user}: {rating}\n'
+    if username not in liders_names:
+        msg += '...\n'
+        rating = df[df['Username']==username]['Rating'].to_list()[0]
+        msg += f'@{username}: {rating}'
+    return msg
+
+def add_score(username, score):
+    cursor = conn.cursor()
+    cursor.execute(f'UPDATE USER SET rating = rating + {score} WHERE Username = "{username}"')
     conn.commit()
