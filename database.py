@@ -113,9 +113,11 @@ def find_users_in_radius(username:str, coord: tuple, radius: float) -> list:
     '''
     if coord:
         df = pd.read_sql(f'SELECT * FROM USER WHERE Username <> "{username}"', conn)
+        if df.empty:
+            return []
         df['Distance'] = df.apply(lambda x: location.find_distance(x['Lat'], x['Lon'], coord[0], coord[1]), axis = 1)
         return df[df['Distance'] <= radius]['UserId'].to_list()
-    return None
+    return []
 
 
 def lost_animals_of_user(username: str) -> dict:
